@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">% Паспортов с заменой материала по отношению к общему количеству СП</h1>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'diplom:journal' %}" class="btn btn-danger">Назад</a>
+    </div>
+    
+    <div class="card shadow-lg p-4">
+        <canvas id="analyticsChart"></canvas>
+    </div>
+</div>
+
+<style>
+    .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 800px;
+        margin: auto;
+    }
+    .bar {
+        fill: rgba(54, 162, 235, 0.8);
+        transition: fill 0.3s ease;
+    }
+    .bar:hover {
+        fill: orange;
+    }
+    .chart-title {
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var canvas = document.getElementById('analyticsChart');
+        var ctx = canvas.getContext('2d');
+        var data = {{ data|safe }};
+        var data1 = {{ data1|safe }};
+        var labels = {{ div_no|safe }};
+
+        var percentages = data.map((value, index) => {
+            let total = value + data1[index];
+            return total ? ((data1[index] / total) * 100).toFixed(2) : 0;
+        });
+
+        var canvasWidth = 800;
+        var canvasHeight = 400;
+        var padding = 50;
+        var barWidth = 40;
+        var maxYvalue = 100;
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        
+        ctx.fillStyle = "black";
+        ctx.font = "14px Arial";
+        ctx.lineWidth = 2.0;
+        
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, canvasHeight - padding);
+        ctx.lineTo(canvasWidth - padding, canvasHeight - padding);
+        ctx.stroke();
+        
+        for (var i = 0; i <= 10; i++) {
+            var label = Math.round(maxYvalue / 10 * (10 - i));
+            ctx.fillText(label + "%", 10, padding + i * ((canvasHeight - 2 * padding) / 10));
+        }
+        
+        var stepX = (canvasWidth - 2 * padding) / labels.length;
+        
+        for (var i = 0; i < labels.length; i++) {
+            var x = padding + i * stepX + stepX / 2;
+            ctx.fillText(labels[i], x - 10, canvasHeight - padding + 20);
+        }
+        
+        for (var i = 0; i < percentages.length; i++) {
+            var dp = percentages[i];
+            var x = padding + i * stepX + stepX / 2;
+            var height = (dp / maxYvalue) * (canvasHeight - 2 * padding);
+            
+            ctx.fillStyle = "rgba(54, 162, 235, 0.8)";
+            ctx.fillRect(x - barWidth / 2, canvasHeight - padding - height, barWidth, height);
+            
+            ctx.fillStyle = "black";
+            ctx.fillText(dp + "%", x - 10, canvasHeight - padding - height - 5);
+        }
+        
+    });
+</script>
+{% endblock %}

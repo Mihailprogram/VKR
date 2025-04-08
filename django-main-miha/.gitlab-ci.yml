@@ -1,0 +1,4 @@
+include:
+   - project: 'OSMO/ci-ecp'
+     ref: main
+     file: 'remote_django.yml'

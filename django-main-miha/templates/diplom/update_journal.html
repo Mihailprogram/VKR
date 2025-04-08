@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content%}
+
+<div style="margin-left:1500px;margin-top:30px">
+    <a href="{%url 'diplom:journal' %}?page={{page}}#{{numberpunkt}}" class="btn btn-danger"> Назад</a>
+
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-mb-5 p-5">
+        <div class="card" style="margin-left:600px;margin-right:600px">
+            <div class="card-header">
+                Создать
+            </div>
+            <div class="card-body" style="margin-right: 100px;">
+                <form method="post" accept-charset="UTF-8" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {%if eror%}
+                        <p style="color:red;">Ошибочные вводимые параметры 
+                        </p>
+                    {%endif%}
+                    <div class="mb-3" style="margin-left: 50px; margin-right: 50px;">
+                    <p>Материал по ТП {{result.pmd_material}}</p>
+                    <!-- <p>{{result.pmd_material}}</p>  -->
+                    <hr>
+                    <p>Материал по лзк : реальный</p> 
+                    <hr>
+                    <p>Номер ЛЗК: {{result.lfc_no}}</p> 
+                    <hr>
+                    <p>{{result.m_lfc}}</p>
+                    <br>
+                    </div>
+
+                    <div class="mb-3" style="margin-left: 50px; margin-right: 50px;">
+                        <label  class="form-label">Примечание по ТП</label>
+                        <input type="text" class="form-control" id="pmd_note_tp" name="pmd_note_tp" value="{{result.pmd_note_tp}}">
+                    </div>
+                    <div class="mb-3" style="margin-left: 50px; margin-right: 50px;">
+                        <label  class="form-label">Примечание по ПИ</label>
+                        <input type="text" class="form-control" id="pmd_note_pi" name="pmd_note_pi" value="{{result.pmd_note_pi}}">
+                    </div>
+                    <div class="mb-3" style="margin-left: 50px; margin-right: 50px;">
+                        <label  class="form-label">Ответсвенный за паспорт</label>
+                        <input type="text" class="form-control" id="ul_login" name="ul_login" value="{{result.ul_login}}">
+                    </div>
+                    <div class="mb-3" style="margin-left: 50px; margin-right: 50px;">
+                        <label  class="form-label">Ответсвенный за материал</label>
+                        <input type="text" class="form-control" id="pmd_responsible" name="pmd_responsible" value="{{result.pmd_responsible}}">
+                    </div>
+                    
+
+                    <button class="btn btn-primary" type="submit" style="margin-left:150px;">Сохранить</button>
+                    
+                </form>
+            </div>
+        </div>
+    </div>
+
+{%endblock%}

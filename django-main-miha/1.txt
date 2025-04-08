@@ -1,0 +1,353 @@
+
+
+-- =============================================
+-- Author:      Химач М.Е.
+-- Create date: 09.11.2024
+-- Description: Журнал учета РАЗРЕШЕНИЙ  
+-- =============================================
+
+
+DECLARE
+	_allIDpassport       integer  := ($1->>'_allIDpassport')::integer;
+	_date_start   date  := ($1->>'_date_start')::date;      --начальная дата
+	_date_end     date  := ($1->>'_date_end')::date;		   --конечная дата
+	_department         integer := ($1->>'_form')::integer;		--Если цех не задан то все отклонения
+BEGIN
+	
+
+RETURN ( 
+      jsonb_build_object (
+        'dataset', 
+	        (
+	          SELECT jsonb_strip_nulls(jsonb_agg(t)) FROM (
+			  WITH dataset AS (
+			    	SELECT  
+						pasmater.pmd_no AS NumberPunkt, -- НомерРазрешения
+						pasmater.pas_id, 
+						ps.pas_no AS PassportNumber, -- НомерПаспорта
+						ps.div_no AS PassportDivision, -- Цех
+						ps.pas_year AS PassportYear, -- Год
+						-- ps. AS PassportNumberPrint, -- номерВычисляемый
+						NULL AS IDNomenclature,
+						pasmater.div_no AS DivPermissions, -- ЦехРазрешения
+						pasmater.pmd_date_add, -- ДатаЗаведения
+						pasmater.ul_id_add, --ОтветственныйЗаведение
+						pasmaterpasmater.pmd_mtr_responsible, -- ОтветственныйМатериал
+						pasmaterpasmater.pmd_note_tp, --ОтклонениеТП
+						NULL AS NomenclatureMeans,
+					    NULL AS StandardSize, 
+					    NULL AS NomenclatureName,
+					    NULL AS NomenclatureCode,
+						l.lfc_no, -- МТРномерЛимитки
+						mp.pr_quantity_sending --КоличествоОтправка
+						
+					
+					
+					FROM mkadd.passport_material_deviation as pasmater
+					INNER JOIN mkadd.passport AS ps 
+					ON pasmater.pas_id = ps.pas_id
+					LEFT JOIN mkadd.passport_lfc AS pl
+					ON pl.pas_id = ps.pas_id
+					LEFT JOIN mkadd.limit_fence_card AS l
+					ON l.lfc_id = pl.lfc_id
+					INNER JOIN mkadd.passport_route as mp
+					ON mp.pas_id = pasmater.pas_id
+					-- AND mp.div_no_route = 
+					-- AND pr_div_npp = 
+					WHERE pasmater.div_no = NULLIF(_department, pasmater.div_no)
+					AND (ps.pas_date_del IS NULL)
+					AND pasmater.pmd_date_add::date BETWEEN _date_start AND  _date_end
+					ORDER BY pasmater.pmd_no DESC
+					LIMIT 10
+			)
+	              SELECT
+	              t.NumberPunkt,
+				  t.pas_id,
+				  t.PassportNumber,
+				  t.PassportDivision,
+				  t.PassportYear,
+				  -- t.PassportNumberPrint
+				  t.IDNomenclature,
+				  t.DivPermissions,
+				  t.pmd_date_add,
+				  t.ul_id_add,
+				  t.pmd_mtr_responsible,
+				  t.pmd_note_tp,
+				  t.NomenclatureMeans,
+				  t.StandartSize,
+				  t.NomenclatureName,
+				  t.NomenclatureCode,
+				  t.lfc_no,
+				  t.pr_quantity_sending
+				  FROM dataset AS t
+				  
+		    ) AS t
+		  )
+		)
+	);
+  
+END
+
+
+    # N пп numberpunkt
+    # data pmd_date_add
+    # nomenclaturemeans
+    # - 
+    # N cp fulnumpas
+    # цех passportdivision
+    # док pmd_note_tp
+    # ul_login
+    # pmd_responsible
+
+
+
+
+-- =============================================
+-- Author:      Химач М.Е.
+-- Create date: 09.11.2024
+-- Description: Журнал учета РАЗРЕШЕНИЙ  
+-- =============================================
+
+
+DECLARE
+	_allIDpassport       integer  := ($1->>'allIDpassport')::integer;
+	_date_start   		 date  := ($1->>'date_start')::date;      --начальная дата
+	_date_end            date  := ($1->>'date_end')::date;		   --конечная дата
+	_department          integer := ($1->>'department')::integer;		--Если цех = 0 то выводим все
+BEGIN
+	
+
+RETURN ( 
+      jsonb_build_object (
+        'dataset', 
+	        (
+	          SELECT jsonb_strip_nulls(jsonb_agg(t)) FROM (
+			  WITH dataset AS (
+			    	SELECT  
+						pasmater.pmd_no AS NumberPunkt, -- НомерРазрешения
+						pasmater.pas_id, 
+						ps.pas_no AS PassportNumber, -- НомерПаспорта
+						ps.div_no AS PassportDivision, -- Цех
+						ps.pas_year AS PassportYear, -- Год
+						-- ps. AS PassportNumberPrint, -- номерВычисляемый
+						NULL AS IDNomenclature,
+						pasmater.div_no AS DivPermissions, -- ЦехРазрешения
+						pasmater.pmd_date_add::date, -- ДатаЗаведения
+						us.ul_login, --ОтветственныйЗаведение(За паспорт)
+						pasmater.pmd_responsible, -- ОтветственныйМатериал
+						pasmater.pmd_note_tp, --ОтклонениеТП
+						nomen.nom_designation AS NomenclatureMeans, -- ОбозначениеНовое nom_designation  passport_nomenclature 
+					    nomen.nom_size AS StandardSize, --
+					    nomen.nom_name AS NomenclatureName,
+					    nomen.nom_code AS NomenclatureCode,
+						mkadd.zs_get_pas_no_full_by_pas_id(pasmater.pas_id) AS fulnumpas,
+						l.lfc_no, -- МТРномерЛимитки ЛЗК
+						mp.pr_quantity_sending --КоличествоОтправка
+						
+					
+					
+					FROM mkadd.passport_material_deviation as pasmater
+					
+					INNER JOIN mkadd.passport AS ps 
+					ON pasmater.pas_id = ps.pas_id
+					
+					LEFT JOIN mkadd.passport_lfc AS pl
+					ON pl.pas_id = ps.pas_id
+
+					LEFT JOIN mkadd_073.passport_nomenclature AS nomen
+					ON nomen.pas_id = pasmater.pas_id
+					
+					LEFT JOIN mkadd.user_logins as us
+					ON pasmater.ul_id_add = us.ul_id
+					
+					LEFT JOIN mkadd.limit_fence_card AS l
+					ON l.lfc_id = pl.lfc_id
+					
+					INNER JOIN mkadd.passport_route as mp
+					ON mp.pas_id = pasmater.pas_id --
+					
+					AND mp.div_no_route = CASE WHEN  pasmater.div_no = 343 THEN 393 ELSE pasmater.div_no END
+					AND pr_div_npp = (SELECT MIN(pr_div_npp)
+							FROM mkadd.passport_route
+							WHERE pas_id = pasmater.pas_id AND 
+							div_no_route = CASE WHEN pasmater.div_no = 343 THEN 393 ELSE pasmater.div_no END 
+					) 
+					
+					WHERE pasmater.div_no = CASE WHEN _department = 0 THEN pasmater.div_no ELSE _department END  
+					AND (ps.pas_date_del IS NULL)
+					AND pasmater.pmd_date_add::date BETWEEN _date_start AND  _date_end
+					ORDER BY pasmater.pmd_no DESC
+			)
+	              SELECT 
+	              t.NumberPunkt,
+				  t.pas_id,
+				  t.PassportNumber,
+				  t.PassportDivision,
+				  t.PassportYear,
+				  -- t.PassportNumberPrint
+				  t.IDNomenclature,
+				  t.DivPermissions,
+				  t.pmd_date_add,
+				  t.ul_login,
+				  t.pmd_responsible,
+				  t.pmd_note_tp,
+				  t.NomenclatureMeans,
+				  t.StandardSize,
+				  t.NomenclatureName,
+				  t.NomenclatureCode,
+				  t.lfc_no,
+				  t.fulnumpas,
+				  t.pr_quantity_sending
+				  FROM dataset AS t
+				  
+		    ) AS t
+		  )
+		)
+	);
+  
+END
+
+passport_extension
+
+lfc_no - номер ЛЗК
+материал по ТП брать из pmd_material
+SELECT mkadd.journal_permissions('{"idpasport":111885054}');
+
+
+
+
+{% extends 'base.html' %}
+
+{% block content%}
+
+
+
+<h1 style="font-family: Arial, Helvetica, sans-serif; margin-left: 300px; margin-top: 30px;">«Ведение в ИС МКАДД журнала учёта разрешений замены материала»</h1>
+<div style="font-family: Arial, Helvetica, sans-serif; margin-left: 300px; margin-top: 30px;">
+    <p>Данное веб-приложение нужно для ведения в ИС МКАДД журнала учёта разрешений замены материала</p>
+</div>
+
+<div style="margin-left:300px;margin-top:30px">
+    <a href={%url 'diplom:journal' %} class="btn btn-primary"> Журнал учёта разрешений</a>
+</div>
+
+{%endblock%}
+
+
+
+-- FUNCTION: mkadd.journal_accounting_permissions(jsonb)
+
+-- DROP FUNCTION IF EXISTS mkadd.journal_accounting_permissions(jsonb);
+
+CREATE OR REPLACE FUNCTION mkadd.journal_accounting_permissions(
+	jsonb)
+    RETURNS jsonb
+    LANGUAGE 'plpgsql'
+    COST 100
+    STABLE PARALLEL UNSAFE
+AS $BODY$
+
+-- =============================================
+-- Author:      Химач М.Е.
+-- Create date: 06.11.2024
+-- Description: Журнал учета РАЗРЕШЕНИЙ  
+-- =============================================
+
+DECLARE
+	_allIDpassport       integer  := ($1->>'allIDpassport')::integer;
+	_date_start   		 date  := ($1->>'date_start')::date;      --начальная дата
+	_date_end            date  := ($1->>'date_end')::date;		   --конечная дата
+	_department          integer := ($1->>'department')::integer;		--Если цех = 0 то выводим все
+BEGIN
+	
+
+RETURN ( 
+      jsonb_build_object (
+        'dataset', 
+	        (
+	          SELECT jsonb_strip_nulls(jsonb_agg(t)) FROM (
+			  WITH dataset AS (
+			    	SELECT  
+						pasmater.pmd_no AS NumberPunkt, -- НомерРазрешения
+						pasmater.pas_id, 
+						ps.pas_no AS PassportNumber, -- НомерПаспорта
+						ps.div_no AS PassportDivision, -- Цех
+						ps.pas_year AS PassportYear, -- Год
+						pasmater.div_no AS DivPermissions, -- ЦехРазрешения
+						pasmater.pmd_date_add::date, -- ДатаЗаведения
+						us.ul_login, --ОтветственныйЗаведение(За паспорт)
+						pasmater.pmd_responsible, -- ОтветственныйМатериал
+						pasmater.pmd_note_tp, --ОтклонениеТП
+						nomen.nom_designation AS NomenclatureMeans, -- ОбозначениеНовое nom_designation  passport_nomenclature 
+					    nomen.nom_size AS StandardSize, --
+					    nomen.nom_name AS NomenclatureName,
+					    nomen.nom_code AS NomenclatureCode,
+						mkadd.zs_get_pas_no_full_by_pas_id(pasmater.pas_id) AS fulnumpas,
+						l.lfc_no, -- МТРномерЛимитки ЛЗК
+						mp.pr_quantity_sending --КоличествоОтправка
+						
+					
+					
+					FROM mkadd.passport_material_deviation as pasmater
+					
+					INNER JOIN mkadd.passport AS ps 
+					ON pasmater.pas_id = ps.pas_id
+					
+					LEFT JOIN mkadd.passport_lfc AS pl
+					ON pl.pas_id = ps.pas_id
+
+					LEFT JOIN mkadd_073.passport_nomenclature AS nomen
+					ON nomen.pas_id = pasmater.pas_id
+					
+					LEFT JOIN mkadd.user_logins as us
+					ON pasmater.ul_id_add = us.ul_id
+					
+					LEFT JOIN mkadd.limit_fence_card AS l
+					ON l.lfc_id = pl.lfc_id
+					
+					LEFT JOIN mkadd.passport_route as mp
+					ON mp.pas_id = pasmater.pas_id --
+
+					
+					AND mp.div_no_route = CASE WHEN  pasmater.div_no = 343 THEN 393 ELSE pasmater.div_no END
+					AND pr_div_npp = (SELECT MIN(pr_div_npp)
+							FROM mkadd.passport_route
+							WHERE pas_id = pasmater.pas_id AND 
+							div_no_route = CASE WHEN pasmater.div_no = 343 THEN 393 ELSE pasmater.div_no END 
+					) 
+					
+					WHERE pasmater.div_no = CASE WHEN _department = 0 THEN pasmater.div_no ELSE _department END  
+					-- AND (ps.pas_date_del IS NULL)
+					-- AND pasmater.pmd_date_add::date BETWEEN _date_start AND  _date_end
+					ORDER BY pasmater.pmd_no DESC
+			)
+	              SELECT 
+	              t.NumberPunkt,
+				  t.pas_id,
+				  t.PassportNumber,
+				  t.PassportDivision,
+				  t.PassportYear,
+				  t.DivPermissions,
+				  t.pmd_date_add,
+				  t.ul_login,
+				  t.pmd_responsible,
+				  t.pmd_note_tp,
+				  t.NomenclatureMeans,
+				  t.StandardSize,
+				  t.NomenclatureName,
+				  t.NomenclatureCode,
+				  t.lfc_no,
+				  t.fulnumpas,
+				  t.pr_quantity_sending
+				  FROM dataset AS t
+				  
+		    ) AS t
+		  )
+		)
+	);
+  
+END
+$BODY$;
+
+ALTER FUNCTION mkadd.journal_accounting_permissions(jsonb)
+    OWNER TO d99320;

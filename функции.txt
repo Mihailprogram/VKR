@@ -1,0 +1,4 @@
+journal_accounting_permissions - для получения всех данных по журанлу
+insert_deviere_mtr             - для добаления данных в журнал
+journal_permissions            - для получения одной конкретной записи в журнале
+update_journal                 - для обновления записи в журнале

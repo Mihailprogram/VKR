@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content%}
+<div class="row justify-content-center">
+    <div class="col-mb-5 p-5">
+        <div class="card" style="margin-left:600px;margin-right:600px">
+            <div class="card-header">
+                {% if is_edit %}
+                Редактировать
+                {%else%}
+                Создать
+                {%endif%}
+                
+            </div>
+            <div class="card-body" >
+                <form method="post" accept-charset="UTF-8" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    {%if form.errors%}
+                        {% for feild in form%}
+                            {% for er in feild.errors%}
+                            <p style="color:red;">{{er|escape}} </p>
+                            {%endfor%}
+                        {%endfor%}
+                        {% for er in form.non_field_errors%}
+                            <p style="color:red;">{{er|escape}} </p>
+                        {%endfor%}
+
+                    {%endif%}
+                    {% for feild in form%}
+                        <div class="mb-4" style="margin-left:150px">
+                        {%if feild.name == "sign_action" %}
+                         {{feild.label}}
+                         {{feild}}
+                         <input type="text" id="customInput1" maxlength="1" class="form-control" style="display: none ; margin-right:100px;margin-block:20px;width:300px" placeholder="Введите свой вариант" name="custom_sing">
+
+                        {% elif  feild.name == "type_customers" %}
+                            {{feild.label}}
+                            {{feild}}
+                        <input type="text" id="customInput" maxlength='15' class="form-control" style="display: none ; margin-right:100px;margin-block:20px;width:300px" placeholder="Введите свой вариант" name="custom_type">
+
+                        {%else%}
+                                {{feild.label}}
+                                {{feild}}
+                        {%endif%}
+                        </div>
+                    {%endfor%}
+                    
+                    <script>
+
+                        document.addEventListener("DOMContentLoaded",
+                        function(){
+                            var selectInput = document.getElementById("selectInput");
+                            
+                            var customInput = document.getElementById("customInput");
+
+                            selectInput.addEventListener("change",function(){
+                                if (selectInput.value==="other"){
+                                    customInput.style.display = "block"
+                                }else{
+                                    customInput.style.display = "none"
+                                }
+                            });
+
+                            var selectInput1 = document.getElementById("selectInput1");
+                            
+                            var customInput1 = document.getElementById("customInput1");
+
+                            selectInput1.addEventListener("change",function(){
+                                if (selectInput1.value==="other"){
+                                    customInput1.style.display = "block"
+                                }else{
+                                    customInput1.style.display = "none"
+                                }
+                            });
+                        });
+                    </script>
+
+                    <button class="btn btn-primary" type="submit" style="margin-left:150px;">Сохранить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        
+
+{%endblock%}

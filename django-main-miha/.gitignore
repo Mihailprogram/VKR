@@ -1,0 +1,12 @@
+
+/main/settings/django_private.py_example_devel
+/main/settings/django_private.py_example_production
+/main/settings/local_dev.py
+__pycache__/    
+/api/__pycache__
+/div_keep_no/__pycache__
+/main/__pycache__
+/main/settings/__pycache__
+/utils/__pycache__
+/venv
+/__pycache__

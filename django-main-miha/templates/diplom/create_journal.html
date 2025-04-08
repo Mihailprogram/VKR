@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content%}
+
+<div style="margin-left:1500px;margin-top:30px">
+    <a href="{%url 'diplom:journal' %}?page={{page}}" class="btn btn-danger"> Назад</a>
+
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-mb-5 p-5">
+        <div class="card" style="margin-left:600px;margin-right:600px">
+            <div class="card-header">
+                Создать
+            </div>
+            <div class="card-body" style="margin-right: 100px;">
+                <form method="post" accept-charset="UTF-8" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {%if eror%}
+                        <p style="color:red;">Ошибочные вводимые параметры 
+                        </p>
+                        <p style="color:red;">
+                            № СП необходимо писать с "/"
+
+                        </p>
+                    {%endif%}
+                    {%if form.errors %}
+                        {% for feild in form%}
+                            {% for er in feild.errors%}
+                            <p style="color:red;">{{er}} </p>
+                            {%endfor%}
+                        {%endfor%}
+                        {% for er in form.non_field_errors%}
+                            <p style="color:red;">{{er}} </p>
+                        {%endfor%}
+
+                    {%endif%}
+                    {% for feild in form%}
+                        <div class="mb-4" style="margin-left:150px">
+                            {{feild.label}}
+                            <div > 
+                                {{feild}}
+                            </div>
+                       
+                        </div>
+                    {%endfor%}
+                    
+
+                    <button class="btn btn-primary" type="submit" style="margin-left:150px;">Сохранить</button>
+                    
+                </form>
+            </div>
+        </div>
+    </div>
+
+{%endblock%}

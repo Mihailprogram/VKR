@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{%load filters%}
+{% load static %}
+{% block content%}
+
+
+<div style='display:flex;'>
+{%if is_edit%}
+
+    <div style="margin-left:100px;margin-top:20px">
+        <a href={%url 'users:get_all' %} class="btn btn-primary">Назад</a>
+    </div>
+    {%else%}
+
+        <div style="margin-left:100px;margin-top:30px">
+            <a href={%url 'users:create_user' %} class="btn btn-primary">Добавление</a>
+        </div>
+    {%endif%}
+</div>
+
+<div style='display:flex;'>
+
+<div  style="margin-left:50px;margin-top:75px;margin-right:100px">
+    <div class="col">
+        <div class="card" style="width: 300px">
+            <div class="card-body">
+    <form method="post" actions={%url 'users:get_all'%}>
+        {% csrf_token %}
+    <h4><b>Подразделение:</b></h4> <input type="number" name="div_no" class="form-control" style="max-width: 300px" min="0" max="999"  id="id_div_no">
+    <br>
+    <h4><b>МОЛ:</b></h4> <input type="number" name="keep_no" class="form-control" style="max-width: 300px" min="0" max="99"  id="id_keep_no">
+    <br>
+    <h4><b>Пользователь:</b></h4> <input type="text" name="customer" class="form-control" style="max-width: 300px" maxlength="50"  id="id_customer">
+    <br>
+    <h4><b>ФИО:</b></h4> <input type="text" name="fio" class="form-control" style="max-width: 300px" maxlength="255" id="id_fio">
+    <br>
+    <button class="btn btn-primary" type="submit" style="margin-left:10px;"> <img src={% static 'img/search.png' %}> Поиск</button>
+    </form>
+        </div>
+        </div>
+    </div>
+</div>
+
+    <div class="row row-cols-1  g-4" style="margin-left:100px;margin-top:50px;margin-right:600px">
+        {%for date in page_obj%}
+        <div class="col">
+                <div class="card" style="width: 1000px">
+                    <div class="card-body">
+                    <p><b>Подразделение:</b> {{date.div_no|zero}} &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp <b>МОЛ:</b> {{date.keep_no|zero2}} &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp   <b>Пользователь:</b> {{date.customer}} </p>
+                    <p><b>ФИО</b> {{date.fio|nones}}    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp  <b>Тип пользователя:</b> {{date.type_customers|nones}} &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp <b>Признак действия:</b> {{date.sign_action|nones}}</p>
+                    <a  href={%url 'users:update_user' date.user_div_id %} ><img src={% static 'img/edit.png' %}></a>
+                    <button style="border:none; background: none;"  onclick="delet({{date.user_div_id}})" > <img src={% static 'img/del.png' %}> </button>
+                    <script>
+                        function delet(id){
+                            var conf = confirm("Вы уверены что хотите удалить?")
+                            if (conf){
+                                window.location.href="/user/delete/" + id;
+                            }
+                        }
+                    </script>
+
+                    </div>
+                </div>
+        </div>
+    
+        {% endfor %}
+        
+        {% include  'user_div/paginator.html'  %} 
+
+        
+    </div>
+    
+</div>
+   
+        
+<br>
+<br>
+    
+    
+
+{%endblock%}
