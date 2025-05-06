@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{%load filters%}
+{% load static %}
+{% block content%}
+
+<div style='display:flex;'>
+    <form method="post" style="margin-top: 20px;margin-left: 20px;" id="a">
+        {% csrf_token %}
+        С <input type="date" id="date_start" name="date_start" style="border-radius:10px; padding: 5px; box-shadow: none; outline: none;border: none ;" value="{{date_start}}">
+        по <input type="date" id="date_end"  name="date_end" style="border-radius:10px; padding: 5px; box-shadow: none; outline: none; border: none;" value="{{date_end}}">
+        
+        &nbsp  &nbsp &nbsp Цех <select style="border-radius:10px;padding: 5px; box-shadow: none; outline: none; border: none" id="div_no" name="div_no">
+            <option value="" disabled selected>{{div_no}}</option>
+                {% for i in divs%}
+                    <option value="{{i}}">{{i| zero}}</option>
+                {%endfor%}
+                <option value="0">Все</option>
+
+
+            </select>
+        
+        <!-- все <input type="checkbox" id="div_all" name="div_all"> -->
+        {%if pmd_no == 0 %}
+        &nbsp  &nbsp &nbsp N/пп <input id="numberpunkt" type="number" style="border-radius:10px; padding: 5px; box-shadow: none; outline: none;border: none ;" name="numberpunkt">
+        {%else%}
+        N/пп <input id="numberpunkt" type="number" style="border-radius:10px; padding: 5px; box-shadow: none; outline: none;border: none ;" name="numberpunkt" value="{{pmd_no}}">
+        {%endif%}
+        <button  onclick="search()" id='a' class="btn" type="submit" style="margin-left:0.00001px;" id="search"> <img src={% static 'img/search.png' %}> Поиск</button>
+
+    </form>
+    
+
+        <div style="margin-left:430px;margin-top:30px">
+            <a   class="btn btn-primary" href={% url "diplom:analytics" %} onclick="show_loading(true)">Аналитика</a>
+        </div>
+    
+       
+        
+        <div style="margin-left:10px;margin-top:30px; margin-right: 1px;">
+            <a id='a' class="btn btn-primary" href={% url "diplom:create" page_number %}>Создать</a>
+        </div>
+
+        <div style="margin-left:10px;margin-top:30px; margin-right: 1px;">
+            <button  id='a' id="downl" class="btn btn-primary" onclick="downloadPDF()">Печать журнала</button>
+        </div>
+        
+        <div style="margin-left:10px;margin-top:30px; margin-right: 1px;">
+            <a id='a' class="btn btn-primary" href={% url "diplom:main" %}>На главную</a>
+        </div>
+</div>
+        <div style="margin-top: 20px;margin-left: 20px; display: flex;">
+
+            <select style="border-radius:10px;padding: 5px; box-shadow: none; outline: none; border: none" id="sort" name="sort">
+                <option  disabled selected>Сортировка</option>
+                <option value="1" >По дате(от новой к старой)</option>
+                <option value="2" >По дате(от cтарой к новой)</option>
+                <option value="3" >По ПИ</option>
+                <option value="4" >По документу</option>
+
+
+        
+        
+            </select>
+
+            <button id='a' onclick="Sort()" class="btn btn-success" style="margin-left: 10px;"> Сортировать </button>
+            <p style="margin-left: 100px;font-weight: bold;" id="a"> Общее количество записей {{len}}</p>
+           
+            <div class="sq"> </div > <p>ПИ с просроченной датой</p>
+        </div> 
+<!-- </div> -->
+</div>
+{%if page_obj%}
+<div class="table-cont">  
+<table id="myTable" style="margin-top: 20px; margin-left: 10px; margin-right: 10px;position: sticky" >
+    <thead>
+    <tr >                
+        <th>№ пп</th>
+        <th >Дата <span id="arrow"> </span></th>
+        <th>Обозначение</th>
+        <th>Типоразмер</th>
+        <th>№ СП</th>
+        <th>Цех</th>
+        <th>Документ разрешающий запуск материала</th>
+        <th>Примечание по ПИ</th>
+        <th>Ответственный за паспорт</th>
+        <th>Ответственный за материал</th>
+
+        
+    </tr>
+    </thead>
+    <tbody>
+        {%for jur in page_obj%}
+        <tr data-edit-url="/update/{{jur.pas_id}}/{{jur.numberpunkt}}/{{page_number}}">
+            <td style="text-align: right;">{{jur.numberpunkt |nones }}</td>
+            <td>{{jur.pmd_date_add |nones}}</td>
+            <td style="text-align: left;">{{jur.nomenclaturemeans |nones}} <br>{{jur.nom_name | nones}} </td>
+            {%if jur.type_size %}
+            <td style="text-align: left;">{{jur.type_size |nones}}</td>
+            {%else%}
+            <td></td>
+            {%endif%}
+            <td style="text-align: left;">{{jur.fulnumpas |nones}}</td>
+            <td>{{jur.passportdivision|zero |nones}}</td>
+            <td style="text-align: left;">{{jur.pmd_note_tp |nones }}</td>
+            <td style="text-align: left;" class="{% if jur.date_pi|is_date %} bg-danger{%endif%}">{{jur.pmd_note_pi |nones}} </td>
+            <td style="text-align: left;">{{jur.ul_login |nones }}</td>
+            <td style="text-align: left;">{{jur.pmd_responsible |nones }}</td>
+            
+            <!-- <td><div>
+                <a id="a" href="{%url 'diplom:update' jur.pas_id jur.numberpunkt page_number %}" onclick="high(this)" class="btn btn-secondary" name="edits" type="button"  data-bs-toggle="modal" > Изменить</a>
+                
+            </div></td> -->
+        </tr>
+        {% endfor %}
+     
+    </tbody>   
+    
+
+</table>
+<div id="modalSheetShowMessage" class="modal show">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title">Предупреждение</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-footer flex-column border-top-0">
+                <div id="AlertMessage" class="alert alert-danger text-center fade show"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+<div id="loadingIndicator" class="text-center mt-3 d-none">
+    <img src="/static/img/loading.ico" id="loading-icon" width="64" height="64">
+</div>
+
+{%else%}
+    <h1 style="margin-top: 200px; margin-left: 500px;">Данные не найдены</h1>
+{%endif%} 
+<div style="margin-left: 20px">
+    {% include  'paginator.html'  %} 
+</div>
+   
+<script>
+
+    function show_message_error(message) {
+        const alertDivCheckInterval = setInterval(function() {
+            const alertDiv = document.getElementById('AlertMessage');
+            if (alertDiv) {
+                alertDiv.innerHTML = message;
+                const modalShowMessageEl = document.getElementById('modalSheetShowMessage');
+                if (modalShowMessageEl) {
+                    const modalShowMessage = new bootstrap.Modal(modalShowMessageEl);
+                    modalShowMessage.show();
+                }
+                clearInterval(alertDivCheckInterval); // Останавливаем интервал, как только элемент найден
+            }
+        }, 100); // Проверяем каждые 100 миллисекунд
+    }
+
+   document.getElementById('myTable').addEventListener('dblclick', function(e){
+        const row = e.target.closest('tr');
+        if (row && row.dataset.editUrl){
+            const id =  parseInt    (row.dataset['editUrl'].split('/')[2]);
+            fetch('api/check/'+id + '/').then(response =>{
+                if (!response.ok){
+                    throw new Error('Error ${response.status}');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(id)
+                if (data.mes == 'True'){
+                    window.location.href = row.dataset.editUrl;
+                }else{
+                    show_message_error("Нельзя редактировать!")
+                }
+            })
+        }
+   })
+
+
+   function show_loading(show)
+    {
+        const loader = document.getElementById('loadingIndicator');
+        if (show)
+        {
+            loader.classList.remove('d-none');
+        }
+        else
+        {
+            loader.classList.add('d-none');
+        }
+    }
+    document.addEventListener("DOMContentLoaded",function(){
+        const arrow = document.getElementById('arrow');
+        let sort  = new URLSearchParams(window.location.search).get('sortdate');
+        console.log(sort);
+        if (sort == 'True'){
+            arrow.innerHTML = '&#8593;'
+        }
+        if (sort =='False'){
+            arrow.innerHTML = '&#8595;'
+        }
+    })
+
+   function search(){
+        const loader = document.getElementById('loadingIndicator');
+        loader.classList.remove('d-none');
+        let url = new URL(window.location.href);
+                
+        url.search = '';
+        window.history.pushState({}, '', url);
+
+        if (window.location.href.includes('#')){
+                window.history.replaceState({}, document.title, window.location.href.split('#')[0]);
+            }
+   }
+    function Sort() {
+        var selectEl = document.getElementById("sort").value;
+        
+        if (selectEl == 1){
+
+            const url = new URL(window.location.href);
+            const params = {
+                sortdate: "True",
+            };
+            for (const[key] of url.searchParams){
+                    url.searchParams.delete(key);
+            }
+            
+            Object.keys(params).forEach(key => url.searchParams.set(key,params[key]));
+            window.location.href = url;
+            // arrow.innerHTML = '&#8593;'
+
+            }
+            if (selectEl == 2){
+
+                const url = new URL(window.location.href);
+                const params = {
+                    sortdate: "False",
+                };
+                for (const[key] of url.searchParams){
+                    url.searchParams.delete(key);
+                }
+                Object.keys(params).forEach(key => url.searchParams.set(key,params[key]));
+                window.location.href = url;
+                // arrow.innerHTML = '&#8595;'
+                
+            }
+            if (selectEl == 3){
+                const url = new URL(window.location.href);
+                const params = {
+                    sortdate: "PI",
+                };
+                for (const[key] of url.searchParams){
+                    url.searchParams.delete(key);
+                }
+                Object.keys(params).forEach(key => url.searchParams.set(key,params[key]));
+                window.location.href = url;
+            }
+            if (selectEl == 4){
+                const url = new URL(window.location.href);
+                const params = {
+                    sortdate: "doc",
+                };
+                for (const[key] of url.searchParams){
+                    url.searchParams.delete(key);
+                }
+                Object.keys(params).forEach(key => url.searchParams.set(key,params[key]));
+                window.location.href = url;
+            }
+    }
+    function downloadPDF(){
+        if (window.location.href.includes('#')){
+            window.history.replaceState({}, document.title, window.location.href.split('#')[0]);
+        }
+        const burl = window.location.href;
+        const par = 'download=True';
+        if (burl.includes('?')){
+            url = burl + '&' + par;
+        }else{
+            url = burl + '?' + par;
+
+        }
+        const loader = document.getElementById('loadingIndicator');
+
+        loader.classList.remove('d-none');
+
+        console.log(url)
+        fetch(url)
+        .then(response =>
+        {
+            if (response.ok)
+            {
+                loader.classList.add('d-none');
+            }
+        });
+        setTimeout(()=>{
+            const uri =   '/static/print.pdf' ;
+            const a = document.createElement('a');
+            a.href = uri;
+            a.download = uri;
+            a.click();
+        },2000);
+        }
+        
+        document.addEventListener(
+            'DOMContentLoaded', (event) => {
+                var selectEl1 = document.getElementById("div_no");
+                
+                const saved1 = localStorage.getItem('selectedOption2');
+              
+
+                if (saved1){
+                    selectEl1.value = saved1;
+                }
+
+             
+
+                
+                selectEl1.addEventListener('change',(event) => {
+                    localStorage.setItem('selectedOption2', event.target.value);
+                });
+            }
+        );
+        
+        (function (){
+            const urlSplit = document.location.href.split('#');
+            
+            if (urlSplit.length > 1) {
+                const rows = document.querySelectorAll('tr');
+                rows.forEach(row => {
+                    row.style.backgroundColor = '';
+                });
+
+                rows.forEach(row => {
+                    const firstCell = row.cells[0];
+                    if (firstCell && firstCell.textContent.trim() == urlSplit[1]){
+                        row.style.backgroundColor = '#b8aae9';
+                        console.log(firstCell);
+
+                    }
+                });
+            }
+
+        })();
+
+        document.getElementById('search').addEventListener('click', function(){
+            var basur = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({},document.title, basur);
+        });
+        
+        
+        
+</script>
+
+{%endblock%}

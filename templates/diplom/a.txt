@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{%load filters%}
+{% load static %}
+{% block content %}
+<div class="container mt-4" id="a">
+    <h1 class="text-center mb-4">Процент паспортов с заменой материала по отношению к общему количеству СП</h1>
+    <form method="get" action="{% url 'diplom:analytics' %}">
+        Год <select style="border-radius:10px;padding: 5px; box-shadow: none; outline: none; border: none; margin-top: 20px;" id="year" name="year">
+                <option value="" disabled selected>{{yaer_one | nones }}</option>
+                
+                {% for i in year%}
+                    <option value="{{i}}">{{i}}</option>
+                {%endfor%}
+        
+        
+            </select>
+
+        <button id='a' class="btn" type="submit" style="margin-left:0.00001px;" onclick="search()"> <img src={% static 'img/search.png' %}> Сформировать</button>
+
+    </form>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'diplom:journal' %}" class="btn btn-danger">Назад</a>
+    </div>
+    
+    <div class="card shadow-lg p-4">
+        <canvas id="analyticsChart" width="1500" height="800" style="width: 100%;"></canvas>
+    </div>
+    <br>
+    <br>
+    <h1 class="text-center mb-4">Процент паспортов с заменой материала по отношению к общему количеству паспортов по цеху и году</h1>
+    <form method="post" style="margin-top: 20px;margin-left: 20px;" >
+        {% csrf_token %}
+        Цех <select style="border-radius:10px;padding: 5px; box-shadow: none; outline: none; border: none; margin-top: 20px;" id="div_no" name="div_no">
+        <!-- <option value="" disabled selected>{{div_no}}</option> -->
+            <option value="" disabled selected>{{divs_no}}</option>
+            {% for i in div_no%}
+                <option value="{{i}}">{{i |zero}}</option>
+            {%endfor%}
+            <option value="0">Все</option>
+    
+    
+        </select>
+
+        &nbsp  &nbsp &nbsp Год <select style="border-radius:10px;padding: 5px; box-shadow: none; outline: none; border: none; margin-top: 20px;" id="year" name="year">
+            <option value="" disabled selected>{{years}}</option>
+                
+                {% for i in year%}
+                    <option value="{{i}}">{{i}}</option>
+                {%endfor%}
+        
+        
+            </select>
+            <button id='a' class="btn" type="submit" style="margin-left:0.00001px;" onclick="search()" > <img src={% static 'img/search.png' %}> Сформировать</button>
+
+    </form>
+    <br>
+    <div class="card shadow-lg">
+        <canvas id="analytics" width="1500" height="800" style="width: 100%;height: auto;"></canvas>
+    </div>
+
+    <div id="loadingIndicator" class="text-center mt-3 d-none">
+        <img src="/static/img/loading.ico" id="loading-icon" width="64" height="64">
+    </div>
+</div>
+
+<style>
+    body {
+    margin: 0;
+
+    height: 220vh;
+    background: linear-gradient(to bottom, #ececec, #4495D1);
+    background-repeat: no-repeat;
+  }
+   
+</style>
+
+
+
+<script>
+
+    document.body.style.background = '';
+    document.addEventListener("DOMContentLoaded", function () {
+        var canvas = document.getElementById('analyticsChart');
+        var ctx = canvas.getContext('2d');
+        var data = {{ data|safe }};
+        var data1 = {{ data1|safe }};
+        var labels = {{ div_no|safe }};
+
+        var percentages = data.map((value, index) => {
+            let total = value + data1[index];
+            return total ? ((data1[index] / total) * 100).toFixed(2) : 0;
+        });
+
+        var canvasWidth = canvas.width;
+        var canvasHeight = canvas.height;
+        var padding = 50;
+        var barWidth = 40;
+        var maxYvalue = 100;
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        
+        ctx.fillStyle = "black";
+        ctx.font = "13px PT Serif Caption";
+        ctx.lineWidth = 2.0;
+        
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, canvasHeight - padding);
+        ctx.lineTo(canvasWidth - padding, canvasHeight - padding);
+        ctx.stroke();
+        
+        for (var i = 0; i <= 10; i++) {
+            var label = Math.round(maxYvalue / 10 * (10 - i));
+            ctx.fillText(label + "%", 20, padding + i * ((canvasHeight - 2 * padding) / 10));
+        }
+        
+        var stepX = (canvasWidth - 2 * padding) / labels.length;
+        
+        for (var i = 0; i < labels.length; i++) {
+            var x = padding + i * stepX + stepX / 2;
+            ctx.fillText(labels[i], x - 10, canvasHeight - padding + 20);
+        }
+        
+        for (var i = 0; i < percentages.length; i++) {
+            var dp = percentages[i];
+            var x = padding + i * stepX + stepX / 2;
+            var height = (dp / maxYvalue) * (canvasHeight - 2 * padding);
+            
+            ctx.fillStyle = "rgba(54, 162, 235, 0.8)";
+            ctx.fillRect(x - barWidth / 2, canvasHeight - padding - height, barWidth, height);
+            
+            ctx.fillStyle = "black";
+            ctx.fillText(dp + "%", x - 10, canvasHeight - padding - height - 5);
+        }
+        
+    });
+
+    function search(){
+        const loader = document.getElementById('loadingIndicator');
+        loader.classList.remove('d-none');
+        const url = window.location.href;
+        console.log(url);
+
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const loader = document.getElementById('loadingIndicator');
+        loader.classList.remove('d-none');
+        var canvas = document.getElementById('analytics');
+        var ctx = canvas.getContext('2d');
+        var data = {{ data2_pas|safe }};  
+        var data1 = {{ data3_pasj|safe }};
+        var labels = {{ month|safe }};
+
+        var percentages = data.map((value, index) => {
+            let total = value;
+            return total ? ((data1[index] / total) * 100).toFixed(2): 0;
+        });
+
+        console.log(percentages);
+
+        var canvasWidth = canvas.width;
+        var canvasHeight = canvas.height;
+        var padding = 50;
+        var barWidth = 40;
+        var maxYvalue = 100;
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        
+        ctx.fillStyle = "black";
+        ctx.font = "13px PT Serif Caption";
+        ctx.lineWidth = 2.0;
+        
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, canvasHeight - padding);
+        ctx.lineTo(canvasWidth - padding, canvasHeight - padding);
+        ctx.stroke();
+        
+        for (var i = 0; i <= 10; i++) {
+            var label = Math.round(maxYvalue / 10 * (10 - i));
+            ctx.fillText(label + "%", 20, padding + i * ((canvasHeight - 2 * padding) / 10));
+        }
+        
+        var stepX = (canvasWidth - 2 * padding) / labels.length;
+        
+        for (var i = 0; i < labels.length; i++) {
+            var x = padding + i * stepX + stepX / 2;
+            ctx.fillText(labels[i], x - 10, canvasHeight - padding + 20);
+        }
+        
+        for (var i = 0; i < percentages.length; i++) {
+            var dp = percentages[i];
+            var x = padding + i * stepX + stepX / 2;
+            var height = (dp / maxYvalue) * (canvasHeight - 2 * padding);
+            
+            ctx.fillStyle = "rgba(54, 162, 235, 0.8)";
+            ctx.fillRect(x - barWidth / 2, canvasHeight - padding - height, barWidth, height);
+            
+            ctx.fillStyle = "black";
+            ctx.fillText(dp + "%", x - 10, canvasHeight - padding - height - 5);
+        }
+        loader.classList.add('d-none');
+    });
+</script>
+{% endblock %}

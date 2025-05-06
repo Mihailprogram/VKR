@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{%load filters%}
+{% load static %}
+{% block content %}
+<div class="container mt-4" id="a">
+    <h1 class="text-center mb-4">Процент паспортов с заменой материала по отношению к общему количеству СП</h1>
+    <form method="get" action="{% url 'diplom:analytics' %}">
+        Год <select style="border-radius:10px;padding: 5px; box-shadow: none; outline: none; border: none; margin-top: 20px;" id="year" name="year">
+                <option value="" disabled selected>{{yaer_one | nones }}</option>
+                
+                {% for i in year%}
+                    <option value="{{i}}">{{i}}</option>
+                {%endfor%}
+        
+        
+            </select>
+
+        <button id='a' class="btn" type="submit" style="margin-left:0.00001px;" onclick="search()"> <img src={% static 'img/search.png' %}> Сформировать</button>
+
+    </form>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'diplom:journal' %}" class="btn btn-danger">Назад</a>
+    </div>
+    
+    <!-- <div class="card shadow-lg p-4"> -->
+        <div id="analyticsChart" ></div>
+    <!-- </div> -->
+    <br>
+    <br>
+    <h1 class="text-center mb-4">Процент паспортов с заменой материала по отношению к общему количеству паспортов по цеху и году</h1>
+    <form method="post" style="margin-top: 20px;margin-left: 20px;" >
+        {% csrf_token %}
+        Цех <select style="border-radius:10px;padding: 5px; box-shadow: none; outline: none; border: none; margin-top: 20px;" id="div_no" name="div_no">
+        <!-- <option value="" disabled selected>{{div_no}}</option> -->
+            <option value="" disabled selected>{{divs_no}}</option>
+            {% for i in div_no%}
+                <option value="{{i}}">{{i |zero}}</option>
+            {%endfor%}
+            <option value="0">Все</option>
+    
+    
+        </select>
+
+        &nbsp  &nbsp &nbsp Год <select style="border-radius:10px;padding: 5px; box-shadow: none; outline: none; border: none; margin-top: 20px;" id="year" name="year">
+            <option value="" disabled selected>{{years}}</option>
+                
+                {% for i in year%}
+                    <option value="{{i}}">{{i}}</option>
+                {%endfor%}
+        
+        
+            </select>
+            <button id='a' class="btn" type="submit" style="margin-left:0.00001px;" onclick="search()" > <img src={% static 'img/search.png' %}> Сформировать</button>
+
+    </form>
+    <br>
+    <!-- <div class="card shadow-lg"> -->
+        <div id="analytics" ></div>
+    <!-- </div> -->
+
+    <div id="loadingIndicator" class="text-center mt-3 d-none">
+        <img src="/static/img/loading.ico" id="loading-icon" width="64" height="64">
+    </div>
+
+    <!-- <div id="detWind"> -->
+        <!-- <span class="close-btn" onclick="document.getElementById('detWind').style.display='none'">x</span> -->
+        <div class="d-none" id="detCont"> <h1></h1> </div>
+    <!-- </div> -->
+</div>
+
+<style>
+
+.table-cont{
+    max-height: 400px;
+    overflow-y: auto;
+  } 
+            
+    body {
+    margin: 0;
+
+    height: 250vh;
+    background: linear-gradient(to bottom, #ececec, #4495D1);
+    background-repeat: no-repeat;
+  }
+  .close-btn{
+    position: absolute;
+    top:5px;
+    right: 10px;
+    cursor: pointer;
+  }
+  #detWind{
+    display: none;
+    position: fixed;
+  }
+   
+</style>
+
+
+
+<script>
+
+    document.body.style.background = '';
+    document.addEventListener("DOMContentLoaded", function () {
+        const loader = document.getElementById('loadingIndicator');
+        loader.classList.remove('d-none');
+        // var canvas = document.getElementById('analyticsChart');
+        // var ctx = canvas.getContext('2d');
+        var data = {{ data|safe }};
+        var data1 = {{ data1|safe }};
+        var labels = {{ div_no|safe }};
+
+        var percentages = data.map((value, index) => {
+            let total = value + data1[index];
+            return total ? ((data1[index] / total) * 100).toFixed(2) : 0;
+        });
+        const chartData = labels.map((label, index) => ({
+            name: label,
+            y: parseFloat(percentages[index]),
+            total: data[index] + data1[index],
+            part1: data[index],
+            part2: data1[index]
+            }));
+
+        Highcharts.chart('analyticsChart', {
+
+            chart: {
+                type: 'column',
+                
+            },
+            title: {
+                text : 'Аналитика'
+            },
+            xAxis : {
+                categories: labels,
+                title : {
+                    text: 'Цеха'
+                }
+            },
+            yAxis:{
+                min: 0,
+                max: 100,
+                title : {
+                    text: 'Проценты(%)'
+                }
+            },
+            tooltip : {
+                formatter: function(){
+                    console.log(this)
+                    const y = this.y + '%';
+                    return '<b>' + y;
+                }
+            },
+            plotOptions: {
+                column: {
+                    pointPadding: 0.2,
+                    borderWidth: 0,
+                 
+                }
+            },
+            series:[{
+                showInLegend: false,
+                color:'rgb(44, 175, 254)',
+                data: chartData,
+                dataLabels:{
+                    enable: false,
+                    format: '{y}%'
+                }
+            }],
+            credits:
+                {
+                    enabled: false
+                },
+        })
+      
+        loader.classList.add('d-none');
+
+    });
+
+    function search(){
+        const loader = document.getElementById('loadingIndicator');
+        loader.classList.remove('d-none');
+        const url = window.location.href;
+        console.log(url);
+
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+    
+        const loader = document.getElementById('loadingIndicator');
+
+
+        const divres = document.getElementById('detCont')
+        var data = {{ data2_pas|safe }};  
+        var data1 = {{ data3_pasj|safe }};
+        var labels = {{ month|safe }};
+        var divs = {{divs_no | safe}};
+        var year = {{years}};
+        var percentages = data.map((value, index) => {
+            let total = value;
+            return total ? ((data1[index] / total) * 100).toFixed(2): 0;
+        });
+
+        const chartData = labels.map((label, index) => ({
+            name: label,
+            y: parseFloat(percentages[index]),
+            total: data[index] + data1[index],
+            part1: data[index],
+            part2: data1[index],
+            }));
+
+        Highcharts.chart('analytics', {
+            chart: {
+                type: 'column',
+                events:{
+                    load: function(){
+                   
+                       
+                    }
+                }
+            },
+            title: {
+                text : 'Аналитика'
+            },
+            xAxis : {
+                categories: labels,
+                title : {
+                    text: 'Время года'
+                }
+            },
+            yAxis:{
+                min: 0,
+                max: 100,
+                title : {
+                    text: 'Проценты(%)'
+                }
+            },
+            tooltip : {
+                formatter: function(){
+                    var url = 'journal/api/analytics/' + this.options.name + '/' + year + '/' +  divs;
+                    fetch(url).then(response =>{
+                        if (!response.ok){
+                            throw new Error('err');
+                        }
+                        return response.json();
+                    }).then(data =>{
+                        const firs100 = data;
+                        let htmlcon = `
+                                        <br>
+                                        <h1 style="margin-left:50%">${this.options.name}</h1>
+
+                                        <br>
+                                        <div class="table-cont"> <table id="myTable" style="margin-top: 20px; margin-left: 10px; margin-right: 10px;position: sticky" >
+                                    <thead>
+                                    <tr >                
+                                        <th>№ СП</th>
+                                        <th>Код МТР</th>
+                                        <th>№ ЛЗК</th>
+                                        
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                     `
+                        firs100.forEach(item => {
+                            htmlcon += `
+                                    <tr>
+                                    <td style="text-align: left;" class="item-name">${item.pas_no}/${item.div_no} ${item.pas_year}</td>
+                                    <td  class="item-name">${item.mtr_code}</td>
+                                    <td class="item-name">${item.lfc_no}</td>
+                                    </tr>
+                            `
+                            divres.innerHTML = htmlcon;
+                        })
+
+                        document.getElementById('detCont').classList.remove('d-none');
+                        console.log(firs100)
+                    })
+                    const y = this.y + '%';
+                    // document.getElementById('detCont').innerHTML = 
+                    return '<b>' + y;
+                }
+            },
+            plotOptions: {
+                column: {
+                    pointPadding: 0.2,
+                    borderWidth: 0,
+                }
+            },
+            series:[{
+                showInLegend: false,
+                color:'rgb(44, 175, 254)',
+                data: chartData,
+                dataLabels:{
+                    enable: false,
+                    format: '{y}%'
+                }
+            }],
+            credits:
+                {
+                    enabled: false
+                },
+        })
+
+        
+        loader.classList.add('d-none');
+    });
+</script>
+{% endblock %}
